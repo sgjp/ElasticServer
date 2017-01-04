@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"github.com/sgjp/go-coap"
 	"log"
+	"time"
 )
 
 var PrimeNumsQty int
@@ -20,9 +21,11 @@ func startClientWorker(c chan *coap.Message) {
 			primeNumber,_ := getPrimeNumber(m)
 
 			//Call the proxy
-
-			sendCoapMsg("/fwd",strconv.Itoa(primeNumber),coap.GET,coap.Confirmable,"calcPrimeNumberResult",conf.Proxy.Host)
-
+			if cipherAES{
+				sendCoapMsg("/fwd", encrypt(strconv.Itoa(primeNumber)), coap.PUT, coap.Confirmable, "calcPrimeNumberResult", conf.Proxy.Host, m.MessageID, m.Token)
+			}else {
+				sendCoapMsg("/fwd", strconv.Itoa(primeNumber), coap.PUT, coap.Confirmable, "calcPrimeNumberResult", conf.Proxy.Host, m.MessageID, m.Token)
+			}
 
 
 		}
@@ -33,12 +36,30 @@ func startClientWorker(c chan *coap.Message) {
 func startClientManager(){
 	conf := getConfiguration()
 	for i:=1;i<=PrimeNumsQty;i++{
-		log.Printf("Sending %v",i)
+		//log.Printf("Sending %v",i)
+		var rv *coap.Message
+		if cipherAES{
+			rv = sendCoapMsg("/fwd",encrypt(strconv.Itoa(i)),coap.GET,coap.Confirmable,"calcPrimeNumber",conf.Proxy.Host,GenerateMessageID(),make([]byte, 8))
+		}else{
+			rv = sendCoapMsg("/fwd",strconv.Itoa(i),coap.GET,coap.Confirmable,"calcPrimeNumber",conf.Proxy.Host,GenerateMessageID(),make([]byte, 8))
+		}
 
-		rv := sendCoapMsg("/fwd",strconv.Itoa(i),coap.GET,coap.Confirmable,"calcPrimeNumber",conf.Proxy.Host)
+		if rv.Code ==coap.Content{
+			//This means the response is cached and it has a result
+			PrimeNumsCalculated++
+			log.Printf("Calculated: %v prime numbers",PrimeNumsCalculated)
+			if cipherAES{
+				//Decrypt it just for timing
+				decrypt(string(rv.Payload))
+			}
+			if PrimeNumsCalculated==PrimeNumsQty{
+				elapsed := time.Since(StartTime)
+				saveTaskDuration(int64(elapsed/time.Millisecond), PrimeNumsQty)
+				log.Printf("%v prime numbers calculated in %v ms STARTDATE: %v",PrimeNumsQty,(int64(elapsed/time.Millisecond)),StartTime)
+			}
 
-
-		log.Printf(string(rv.Payload))
+		}
+		//log.Printf(string(rv.Payload))
 		//calcPrimeNumberRemotely(i)
 	}
 }
@@ -84,11 +105,12 @@ func calcPrimeNumberRemotely(number int){
 
 }
 
-func sendCoapMsg(path string, payload string, coapCode coap.COAPCode, coapType coap.COAPType, proxyUri, host string) *coap.Message{
+func sendCoapMsg(path string, payload string, coapCode coap.COAPCode, coapType coap.COAPType, proxyUri, host string, messageId uint16, token []byte) *coap.Message{
 	req := coap.Message{
 		Type:      coapType,
 		Code:      coapCode,
-		MessageID: GenerateMessageID(),
+		MessageID: messageId,
+		Token:	   token,
 		Payload:   []byte(payload),
 	}
 

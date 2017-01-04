@@ -26,12 +26,9 @@ func startServer(c chan *coap.Message) {
 				switch m.Path()[0] {
 
 				case "calcPrimeNumber":
-
-
-
 					res := &coap.Message{
 						Type:      coap.Acknowledgement,
-						Code:      coap.Content,
+						Code:      coap.Valid,
 						MessageID: m.MessageID,
 						Token:     m.Token,
 						Payload:   []byte("2.05"),
@@ -45,6 +42,10 @@ func startServer(c chan *coap.Message) {
 				case "calcPrimeNumberResult":
 
 					PrimeNumsCalculated++
+					if cipherAES{
+						//Decrypt it just for timing
+						decrypt(string(m.Payload))
+					}
 					log.Printf("Calculated: %v",PrimeNumsCalculated)
 					if PrimeNumsCalculated==PrimeNumsQty{
 						elapsed := time.Since(StartTime)
@@ -54,7 +55,7 @@ func startServer(c chan *coap.Message) {
 
 					res := &coap.Message{
 						Type:      coap.Acknowledgement,
-						Code:      coap.Content,
+						Code:      coap.Valid,
 						MessageID: m.MessageID,
 						Token:     m.Token,
 						Payload:   []byte("2.05"),

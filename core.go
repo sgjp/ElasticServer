@@ -13,8 +13,14 @@ func getPrimeNumber(m *coap.Message) (int, interface{}) {
 	   //return calcPrimeNumberRemotely(m, conf.Proxy)
 	//}
 	//qty := parseRequestPayload(string(m.Payload))
-	qty,_ :=  strconv.Atoi(string(m.Payload))
-	return calcPrimeNumberLocally(qty), 60
+	if cipherAES{
+		qty,_ :=  strconv.Atoi(decrypt(string(m.Payload)))
+		return calcPrimeNumberLocally(qty), 60
+	}else{
+		qty,_ :=  strconv.Atoi(string(m.Payload))
+		return calcPrimeNumberLocally(qty), 60
+	}
+
 }
 
 func calcPrimeNumberLocally(qty int) int {

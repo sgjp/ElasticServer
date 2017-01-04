@@ -13,14 +13,16 @@ var StartTime time.Time
 
 var port string
 
+var cipherAES bool
+
 var hostManager string
 func main() {
 
 	//mode sets the device to Client(Manager): 0 or Server(Worker): 1
 	mode = 0;
-	PrimeNumsQty = 10000
+	PrimeNumsQty = 3
 	port = ":5684"
-
+	cipherAES = false
 	c := make(chan *coap.Message, 100000)
 
 	
