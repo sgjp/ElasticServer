@@ -19,8 +19,8 @@ var hostManager string
 func main() {
 
 	//mode sets the device to Client(Manager): 0 or Server(Worker): 1
-	mode = 0;
-	PrimeNumsQty = 3
+	mode = 1;
+	PrimeNumsQty = 1000
 	port = ":5684"
 	cipherAES = false
 	c := make(chan *coap.Message, 100000)
